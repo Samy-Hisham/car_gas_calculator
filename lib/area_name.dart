@@ -18,11 +18,28 @@ class AreaName extends StatelessWidget {
         body: SafeArea(
       child: Column(
         children: [
-          TextField(
-            controller: locationController,
+          SizedBox(
+            height: 20,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: locationController,
+              decoration: InputDecoration(
+                labelText: 'Enter the areas',
+                labelStyle: TextStyle(color: Colors.blue),
+                hintText: 'exmaple: Maadi',
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue),
+                ),
+              ),
+            ),
           ),
           SizedBox(
-            height: 50,
+            height: 10,
           ),
           ElevatedButton(
               onPressed: () {
@@ -40,34 +57,54 @@ class AreaName extends StatelessWidget {
                   // print('$locationList');
                 }
               },
-              child: Text('add')),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                elevation: 5,
+              ),
+              child: Text('Add')),
           Expanded(child: Obx(() {
-            return ListView.builder(
-                itemCount: locationList.length,
-                itemBuilder: (ctr, index) => Card(
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(color: Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                      child: ListTile(
-                          title: Text(locationList[index]),
-                          trailing: IconButton(
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+              child: ListView.builder(
+                  itemCount: locationList.length,
+                  itemBuilder: (ctr, index) => Card(
+                        elevation: 5,
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(color: Colors.blue, width: 1),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        margin:
+                            EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                        child: ListTile(
+                            title: Text(locationList[index]),
+                            trailing: IconButton(
                               onPressed: () {
                                 locationList.remove(locationList[index]);
                               },
-                              icon: Icon(Icons.remove))),
-                    ));
+                              icon: Icon(Icons.remove),
+                              color: Colors.red,
+                            )),
+                      )),
+            );
           })),
           SizedBox(
-            height: 20,
+            height: 10,
           ),
           ElevatedButton(
               onPressed: () {
                 Get.to(ResultPage(),
                     arguments: {'data': data, 'locations': locationList});
               },
-              child: Text('Next'))
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                elevation: 5,
+              ),
+              child: Text('Next')),
+          SizedBox(
+            height: 10,
+          )
         ],
       ),
     ));

@@ -1,4 +1,4 @@
-import 'package:car_gas_calculator/result_page.dart';
+import 'package:car_gas_calculator/welcome_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      home: ResultPage(),
+      home: WelcomePage(),
     );
   }
 }

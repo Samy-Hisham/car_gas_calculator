@@ -33,6 +33,12 @@ class CarTypePage extends StatelessWidget {
                     .map((car) => DropdownMenuEntry(value: car, label: car))
                     .toList(),
                 width: double.infinity,
+                // inputDecorationTheme: InputDecorationTheme(
+                //   border: OutlineInputBorder(
+                //     borderSide: BorderSide(color: Colors.blue),
+                //   ),
+                //   labelStyle: TextStyle(color: Colors.blue),
+                // ),
                 enableSearch: true,
                 enableFilter: true,
                 requestFocusOnTap: true,
@@ -78,6 +84,11 @@ class CarTypePage extends StatelessWidget {
                   // print('${car.value}');
                 }
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                elevation: 5,
+              ),
               child: Text('Next'))
         ],
       )),
