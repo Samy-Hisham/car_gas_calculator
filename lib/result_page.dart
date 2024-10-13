@@ -3,82 +3,127 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
-class ResultPage extends StatelessWidget {
+class ResultPage extends StatefulWidget {
   ResultPage({super.key});
 
-  final addressController = TextEditingController();
+  @override
+  _ResultPageState createState() => _ResultPageState();
+}
+
+class _ResultPageState extends State<ResultPage> {
+  final RxList<double> distances = <double>[].obs;
+  bool isLoading = true; // To track loading state
+
+  @override
+  void initState() {
+    super.initState();
+    final arguments = Get.arguments;
+    final locationsList = arguments['locations'] ?? [];
+
+    if (locationsList.isNotEmpty) {
+      calculateDistances(locationsList).then((_) {
+        setState(() {
+          isLoading = false; // Stop loading after calculation
+        });
+      });
+    } else {
+      setState(() {
+        isLoading = false; // No locations, stop loading
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // final data = Get.arguments as Map;
+    final arguments = Get.arguments;
+    final carType = arguments['data']['type'] ?? 'Unknown Car Type';
+    final fuelType = arguments['data']['fuel'] ?? 'Unknown Fuel Type';
+    final locationsList = arguments['locations'] ?? [];
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Distance Calculation'),
+      ),
       body: SafeArea(
-          child: Column(
-        children: [
-          TextField(
-            controller: addressController,
-          ),
-          SizedBox(
-            height: 20,
-          ),
-          ElevatedButton(
-              onPressed: () {
-                final address = addressController.text;
-                getLocation(address);
-              },
-              child: Text('show'))
-        ],
-      )),
+        child: isLoading
+            ? const Center(
+                child:
+                    CircularProgressIndicator(), // Show loader while calculating
+              )
+            : Column(
+                children: [
+                  Expanded(
+                    child: locationsList.isNotEmpty && distances.isNotEmpty
+                        ? Obx(
+                            () {
+                              return ListView.builder(
+                                itemCount: distances.length,
+                                itemBuilder: (context, index) {
+                                  return ListTile(
+                                    title: Text(
+                                      'Distance between ${locationsList[index]} and ${locationsList[index + 1]}:'
+                                      ' ${distances[index].toStringAsFixed(2)} km',
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          )
+                        : const Center(
+                            child: Text('No locations provided.'),
+                          ),
+                  ),
+                  const SizedBox(height: 20),
+                  Obx(() {
+                    if (distances.isNotEmpty) {
+                      final totalDistance = distances.reduce((a, b) => a + b);
+                      return Text(
+                        'Total Distance: ${totalDistance.toStringAsFixed(2)} km',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
+                ],
+              ),
+      ),
     );
   }
 
-  Future<void> getLocation(final s) async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  Future<void> calculateDistances(List<String> locations) async {
+    distances.clear();
+    for (var i = 0; i < locations.length - 1; i++) {
+      final startAddress = locations[i];
+      final endAddress = locations[i + 1];
 
-    // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
-      Get.snackbar('Error', 'Location services are disabled.');
-    }
+      try {
+        // Get the coordinates of both locations
+        List<Location> startPlacemark = await locationFromAddress(startAddress);
+        List<Location> endPlacemark = await locationFromAddress(endAddress);
 
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        // Permissions are denied, next time you could try
-        // requesting permissions again (this is also where
-        // Android's shouldShowRequestPermissionRationale
-        // returned true. According to Android guidelines
-        // your App should show an explanatory UI now.
-        Get.snackbar('Error', 'Location permissions are denied');
-      }
+        double startLatitude = startPlacemark.first.latitude;
+        double startLongitude = startPlacemark.first.longitude;
+        double endLatitude = endPlacemark.first.latitude;
+        double endLongitude = endPlacemark.first.longitude;
 
-      if (permission == LocationPermission.deniedForever) {
-        // Permissions are denied forever, handle appropriately.
+        // Calculate the distance between two locations
+        double distanceInMeters = Geolocator.distanceBetween(
+          startLatitude,
+          startLongitude,
+          endLatitude,
+          endLongitude,
+        );
+        double distanceInKilometers = distanceInMeters / 1000;
+
+        distances.add(distanceInKilometers);
+      } catch (e) {
+        // Handle errors like address not found
         Get.snackbar('Error',
-            'Location permissions are permanently denied, we cannot request permissions.');
+            'Failed to calculate distance for $startAddress and $endAddress');
       }
-
-      final fromAddress = await locationFromAddress(s);
-      print('${fromAddress.first.latitude}/${fromAddress.first.longitude}');
-
-      // final position = await Geolocator.getCurrentPosition();
-      // print('${position.latitude} --- ${position.longitude}');
-
-      //
-      // final uri =
-      //     Uri.parse('geo:0,0?q=${position.latitude},${position.longitude}');
-      // launchUrl(uri);
-
-//Unexpected null value.
-//       final addresses = await placemarkFromCoordinates(
-//           position.longitude, position.longitude);
-//       print('${addresses.first.name}');
     }
   }
 }
