@@ -3,127 +3,332 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
+import 'coordinate_and_route_data.dart';
+
 class ResultPage extends StatefulWidget {
-  ResultPage({super.key});
+  final List<String> locations;
+  final String carType;
+  final String fuelType;
+
+  ResultPage({
+    required this.locations,
+    required this.carType,
+    required this.fuelType,
+  });
 
   @override
-  _ResultPageState createState() => _ResultPageState();
+  State<ResultPage> createState() => _ResultPageState();
 }
 
 class _ResultPageState extends State<ResultPage> {
   final RxList<double> distances = <double>[].obs;
-  bool isLoading = true; // To track loading state
+
+  double fuelConsumptionPerKm = 0.0;
+
+  double fuelPricePerLiter = 0.0;
 
   @override
   void initState() {
     super.initState();
-    final arguments = Get.arguments;
-    final locationsList = arguments['locations'] ?? [];
+    setupFuelAndCarData();
+  }
 
-    if (locationsList.isNotEmpty) {
-      calculateDistances(locationsList).then((_) {
-        setState(() {
-          isLoading = false; // Stop loading after calculation
-        });
-      });
-    } else {
-      setState(() {
-        isLoading = false; // No locations, stop loading
-      });
+  void setupFuelAndCarData() {
+    switch (widget.carType) {
+      case "Toyota":
+        fuelConsumptionPerKm = 5.9 / 100;
+        break;
+      case "Hyundai":
+        fuelConsumptionPerKm = 6.5 / 100;
+        break;
+      case "BMW":
+        fuelConsumptionPerKm = 8.0 / 100;
+        break;
+      case "Mercedes":
+        fuelConsumptionPerKm = 12.0 / 100; W
+        break;
+      default:
+        fuelConsumptionPerKm =
+            0.0; // Default in case car type is not recognized
+        break;
     }
+
+    switch (widget.fuelType) {
+      case "80":
+        fuelPricePerLiter = 12.25;
+        break;
+      case "90":
+        fuelPricePerLiter = 13.75;
+        break;
+      case "92":
+        fuelPricePerLiter = 15.00;
+        break;
+      case "95":
+        fuelPricePerLiter = 17.00; // Example value for gas 95
+        break;
+      case "solar":
+        fuelPricePerLiter = 11.50;
+        break;
+      case "gas":
+        fuelPricePerLiter = 3.75;
+        break;
+      default:
+        fuelPricePerLiter =
+            0.0; // Default value in case gas type is not recognized
+        break;
+    }
+  }
+
+  // Method to calculate total route distance
+  List<double> calculateDistances(List<LocationCoordinate> coordinates) {
+    List<double> distances = [];
+    for (var i = 0; i < coordinates.length - 1; i++) {
+      double distance = Geolocator.distanceBetween(
+            coordinates[i].latitude,
+            coordinates[i].longitude,
+            coordinates[i + 1].latitude,
+            coordinates[i + 1].longitude,
+          ) /
+          1000; // Convert meters to kilometers
+      distances.add(distance);
+    }
+    return distances;
+  }
+
+  double calculateTotalDistance(List<double> distances) {
+    return distances.reduce((a, b) => a + b);
+  }
+
+  // Method to optimize the route by reordering locations based on proximity
+  List<LocationCoordinate> calculateOptimalRoute(
+      List<LocationCoordinate> coordinates) {
+    List<LocationCoordinate> optimizedRoute = [];
+    Set<LocationCoordinate> visited = {};
+
+    LocationCoordinate currentLocation = coordinates.first;
+    optimizedRoute.add(currentLocation);
+    visited.add(currentLocation);
+
+    while (visited.length < coordinates.length) {
+      LocationCoordinate? nearestLocation;
+      double shortestDistance = double.infinity;
+
+      for (var location in coordinates) {
+        if (!visited.contains(location)) {
+          double distance = Geolocator.distanceBetween(
+            currentLocation.latitude,
+            currentLocation.longitude,
+            location.latitude,
+            location.longitude,
+          );
+
+          if (distance < shortestDistance) {
+            shortestDistance = distance;
+            nearestLocation = location;
+          }
+        }
+      }
+
+      currentLocation = nearestLocation!;
+      optimizedRoute.add(currentLocation);
+      visited.add(currentLocation);
+    }
+
+    return optimizedRoute;
+  }
+
+  Future<List<LocationCoordinate>> getCoordinates(
+      List<String> locations) async {
+    List<LocationCoordinate> coordinates = [];
+    for (var location in locations) {
+      var placemarks = await locationFromAddress(location);
+      coordinates.add(LocationCoordinate(
+          location, placemarks.first.latitude, placemarks.first.longitude));
+    }
+    return coordinates;
   }
 
   @override
   Widget build(BuildContext context) {
-    final arguments = Get.arguments;
-    final carType = arguments['data']['type'] ?? 'Unknown Car Type';
-    final fuelType = arguments['data']['fuel'] ?? 'Unknown Fuel Type';
-    final locationsList = arguments['locations'] ?? [];
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Distance Calculation'),
+        title: const Text('Route Suggestions'),
+        centerTitle: true,
       ),
-      body: SafeArea(
-        child: isLoading
-            ? const Center(
-                child:
-                    CircularProgressIndicator(), // Show loader while calculating
-              )
-            : Column(
-                children: [
-                  Expanded(
-                    child: locationsList.isNotEmpty && distances.isNotEmpty
-                        ? Obx(
-                            () {
-                              return ListView.builder(
-                                itemCount: distances.length,
-                                itemBuilder: (context, index) {
-                                  return ListTile(
-                                    title: Text(
-                                      'Distance between ${locationsList[index]} and ${locationsList[index + 1]}:'
-                                      ' ${distances[index].toStringAsFixed(2)} km',
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          )
-                        : const Center(
-                            child: Text('No locations provided.'),
+      body: FutureBuilder(
+        future: calculateOptimalRouteAndCost(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else {
+            final data = snapshot.data as RouteData;
+            final userCostPerKm = fuelConsumptionPerKm * fuelPricePerLiter;
+            final optimizedCostPerKm = fuelConsumptionPerKm * fuelPricePerLiter;
+
+            // Ensure the total cost and savings calculation
+            double userTotalCost = data.userRouteTotalDistance * userCostPerKm;
+            double optimizedTotalCost =
+                data.optimizedRouteTotalDistance * optimizedCostPerKm;
+            final savings = userTotalCost - optimizedTotalCost;
+
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    // User-entered route
+                    buildRouteDetailsCard(
+                      'Your Route:',
+                      data.userRouteNames,
+                      data.userRouteDistances,
+                      data.userRouteTotalDistance,
+                      userCostPerKm,
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Optimized route
+                    buildRouteDetailsCard(
+                      'Optimized Route:',
+                      data.optimizedRouteNames,
+                      data.optimizedRouteDistances,
+                      data.optimizedRouteTotalDistance,
+                      optimizedCostPerKm,
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Display the savings
+                    if (savings > 0)
+                      Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        color: Colors.green.shade100,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Savings:',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'By taking the optimized route, you will save ${savings.toStringAsFixed(2)} EGP',
+                                style: const TextStyle(
+                                    fontSize: 18, color: Colors.green),
+                              ),
+                            ],
                           ),
-                  ),
-                  const SizedBox(height: 20),
-                  Obx(() {
-                    if (distances.isNotEmpty) {
-                      final totalDistance = distances.reduce((a, b) => a + b);
-                      return Text(
-                        'Total Distance: ${totalDistance.toStringAsFixed(2)} km',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
                         ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  }),
-                ],
+                      ),
+                  ],
+                ),
               ),
+            );
+          }
+        },
       ),
     );
   }
 
-  Future<void> calculateDistances(List<String> locations) async {
-    distances.clear();
-    for (var i = 0; i < locations.length - 1; i++) {
-      final startAddress = locations[i];
-      final endAddress = locations[i + 1];
+  Widget buildRouteDetailsCard(
+    String title,
+    List<String> placeNames,
+    List<double> distances,
+    double totalDistance,
+    double costPerKm,
+  ) {
+    double totalCost = totalDistance * costPerKm;
 
-      try {
-        // Get the coordinates of both locations
-        List<Location> startPlacemark = await locationFromAddress(startAddress);
-        List<Location> endPlacemark = await locationFromAddress(endAddress);
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
 
-        double startLatitude = startPlacemark.first.latitude;
-        double startLongitude = startPlacemark.first.longitude;
-        double endLatitude = endPlacemark.first.latitude;
-        double endLongitude = endPlacemark.first.longitude;
+            // Display the order of places, distances, and costs between places
+            for (var i = 0; i < placeNames.length - 1; i++) ...[
+              Text(
+                '${placeNames[i]} → ${placeNames[i + 1]}: ${distances[i].toStringAsFixed(2)} km, Cost: ${(distances[i] * costPerKm).toStringAsFixed(2)} EGP',
+                style: const TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 5),
+            ],
 
-        // Calculate the distance between two locations
-        double distanceInMeters = Geolocator.distanceBetween(
-          startLatitude,
-          startLongitude,
-          endLatitude,
-          endLongitude,
-        );
-        double distanceInKilometers = distanceInMeters / 1000;
+            const SizedBox(height: 10),
 
-        distances.add(distanceInKilometers);
-      } catch (e) {
-        // Handle errors like address not found
-        Get.snackbar('Error',
-            'Failed to calculate distance for $startAddress and $endAddress');
-      }
-    }
+            // Display total distance and cost
+            Text(
+              'Total Distance: ${totalDistance.toStringAsFixed(2)} km',
+              style: const TextStyle(fontSize: 18),
+            ),
+            Text(
+              'Total Cost: ${totalCost.toStringAsFixed(2)} EGP',
+              style: const TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<RouteData> calculateOptimalRouteAndCost() async {
+    List<LocationCoordinate> coordinates =
+        await getCoordinates(widget.locations);
+
+    // User-entered route
+    List<String> userRouteNames = coordinates.map((c) => c.name).toList();
+    List<double> userRouteDistances = calculateDistances(coordinates);
+    double userRouteTotalDistance = calculateTotalDistance(userRouteDistances);
+
+    // Optimized route
+    List<LocationCoordinate> optimalRoute = calculateOptimalRoute(coordinates);
+    List<String> optimizedRouteNames = optimalRoute.map((c) => c.name).toList();
+    List<double> optimizedRouteDistances = calculateDistances(optimalRoute);
+    double optimizedRouteTotalDistance =
+        calculateTotalDistance(optimizedRouteDistances);
+
+    return RouteData(
+      userRouteNames: userRouteNames,
+      userRouteDistances: userRouteDistances,
+      userRouteTotalDistance: userRouteTotalDistance,
+      optimizedRouteNames: optimizedRouteNames,
+      optimizedRouteDistances: optimizedRouteDistances,
+      optimizedRouteTotalDistance: optimizedRouteTotalDistance,
+    );
   }
 }
+
+/*class LocationCoordinate {
+  final String name;
+  final double latitude;
+  final double longitude;
+
+  LocationCoordinate(this.name, this.latitude, this.longitude);
+}
+
+class RouteData {
+  final double userRouteDistance;
+  final double optimizedRouteDistance;
+
+  RouteData(this.userRouteDistance, this.optimizedRouteDistance);
+}*/

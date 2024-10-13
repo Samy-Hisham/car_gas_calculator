@@ -13,6 +13,8 @@ class AreaName extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = Get.arguments;
+    final carType = data['type'] ?? 'Unknown Car Type';
+    final fuelType = data['fuel'] ?? 'Unknown Fuel Type';
 
     return Scaffold(
       body: SafeArea(
@@ -100,7 +102,7 @@ class AreaName extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-              // Ensure that locationList is never null
+                // Ensure that locationList is never null
                 if (locationList.isEmpty) {
                   Fluttertoast.showToast(
                     msg: 'Please add at least one location',
@@ -112,8 +114,12 @@ class AreaName extends StatelessWidget {
                   );
                 } else {
                   Get.to(
-                    ResultPage(),
-                    arguments: {'data': data, 'locations': locationList},
+                    ResultPage(
+                      locations: locationList,
+                      carType: carType,
+                      fuelType: fuelType,
+                    ),
+                    // arguments: {'data': data, 'locations': locationList},
                   );
                 }
               },
