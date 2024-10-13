@@ -316,6 +316,18 @@ class _ResultPageState extends State<ResultPage> {
       optimizedRouteTotalDistance: optimizedRouteTotalDistance,
     );
   }
+
+  List<String> validateList(List<String> locationsList) {
+    List<String> result = [];
+
+    for (int i = 0; i < locationsList.length; i++) {
+      // Check if the result list is empty or if the last element is different
+      if (result.isEmpty || result.last != locationsList[i]) {
+        result.add(locationsList[i]); // Add the current element to the result
+      }
+    }
+    return result; // Return the modified list
+  }
 }
 
 /*class LocationCoordinate {
