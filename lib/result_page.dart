@@ -36,9 +36,11 @@ class _ResultPageState extends State<ResultPage> {
   @override
   Widget build(BuildContext context) {
     final arguments = Get.arguments;
+
     final carType = arguments['data']['type'] ?? 'Unknown Car Type';
     final fuelType = arguments['data']['fuel'] ?? 'Unknown Fuel Type';
     final locationsList = arguments['locations'] ?? [];
+    final newLocationList = validateList(locationsList);
 
     return Scaffold(
       appBar: AppBar(
@@ -53,7 +55,7 @@ class _ResultPageState extends State<ResultPage> {
             : Column(
                 children: [
                   Expanded(
-                    child: locationsList.isNotEmpty && distances.isNotEmpty
+                    child: newLocationList.isNotEmpty && distances.isNotEmpty
                         ? Obx(
                             () {
                               return ListView.builder(
@@ -61,7 +63,7 @@ class _ResultPageState extends State<ResultPage> {
                                 itemBuilder: (context, index) {
                                   return ListTile(
                                     title: Text(
-                                      'Distance between ${locationsList[index]} and ${locationsList[index + 1]}:'
+                                      'Distance between ${newLocationList[index]} and ${newLocationList[index + 1]}:'
                                       ' ${distances[index].toStringAsFixed(2)} km',
                                     ),
                                   );
@@ -125,5 +127,17 @@ class _ResultPageState extends State<ResultPage> {
             'Failed to calculate distance for $startAddress and $endAddress');
       }
     }
+  }
+
+  List<String> validateList(List<String> locationsList) {
+    List<String> result = [];
+
+    for (int i = 0; i < locationsList.length; i++) {
+      // Check if the result list is empty or if the last element is different
+      if (result.isEmpty || result.last != locationsList[i]) {
+        result.add(locationsList[i]); // Add the current element to the result
+      }
+    }
+    return result; // Return the modified list
   }
 }
