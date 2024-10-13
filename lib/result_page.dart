@@ -23,9 +23,9 @@ class ResultPage extends StatefulWidget {
 class _ResultPageState extends State<ResultPage> {
   final RxList<double> distances = <double>[].obs;
 
-  double fuelConsumptionPerKm = 0.0;
+  late double fuelConsumptionPerKm;
 
-  double fuelPricePerLiter = 0.0;
+  late double fuelPricePerLiter;
 
   @override
   void initState() {
@@ -45,7 +45,7 @@ class _ResultPageState extends State<ResultPage> {
         fuelConsumptionPerKm = 8.0 / 100;
         break;
       case "Mercedes":
-        fuelConsumptionPerKm = 12.0 / 100; W
+        fuelConsumptionPerKm = 12.0 / 100;
         break;
       default:
         fuelConsumptionPerKm =
