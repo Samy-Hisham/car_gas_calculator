@@ -96,6 +96,7 @@ class AreaName extends StatelessWidget {
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(
                     controller: locationController,
+                    cursorColor: Colors.cyanAccent,
                     decoration: const InputDecoration(
                       labelText: 'Enter the areas',
                       labelStyle: TextStyle(color: Colors.black),
@@ -188,8 +189,7 @@ class AreaName extends StatelessWidget {
                                       icon: const Icon(Icons.remove),
                                       color: Colors.red,
                                     ),
-                                    const Icon(Icons
-                                        .drag_handle_sharp), // Reordering icon
+                                    const Icon(Icons.drag_handle_sharp),
                                   ],
                                 ),
                               ),
@@ -204,7 +204,16 @@ class AreaName extends StatelessWidget {
                   onPressed: () {
                     if (locationList.isEmpty) {
                       Fluttertoast.showToast(
-                        msg: 'Please add at least one location',
+                        msg: 'Please add at least Two location',
+                        toastLength: Toast.LENGTH_LONG,
+                        gravity: ToastGravity.BOTTOM,
+                        backgroundColor: Colors.red,
+                        textColor: Colors.white,
+                        fontSize: 14.0,
+                      );
+                    } else if (locationList.length < 2) {
+                      Fluttertoast.showToast(
+                        msg: 'Please add more than one location',
                         toastLength: Toast.LENGTH_LONG,
                         gravity: ToastGravity.BOTTOM,
                         backgroundColor: Colors.red,
