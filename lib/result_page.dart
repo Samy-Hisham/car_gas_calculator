@@ -48,8 +48,7 @@ class _ResultPageState extends State<ResultPage> {
         fuelConsumptionPerKm = 12.0 / 100;
         break;
       default:
-        fuelConsumptionPerKm =
-            0.0; // Default in case car type is not recognized
+        fuelConsumptionPerKm = 0.08; // Default
         break;
     }
 
@@ -64,7 +63,7 @@ class _ResultPageState extends State<ResultPage> {
         fuelPricePerLiter = 15.00;
         break;
       case "95":
-        fuelPricePerLiter = 17.00; // Example value for gas 95
+        fuelPricePerLiter = 17.00;
         break;
       case "solar":
         fuelPricePerLiter = 11.50;
@@ -73,8 +72,7 @@ class _ResultPageState extends State<ResultPage> {
         fuelPricePerLiter = 3.75;
         break;
       default:
-        fuelPricePerLiter =
-            0.0; // Default value in case gas type is not recognized
+        fuelPricePerLiter = 15.0; // Default
         break;
     }
   }
