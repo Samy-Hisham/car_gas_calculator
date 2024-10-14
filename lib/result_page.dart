@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -150,90 +152,106 @@ class _ResultPageState extends State<ResultPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.cyan.shade100,
         title: const Text('Route Suggestions'),
         centerTitle: true,
       ),
-      body: FutureBuilder(
-        future: calculateOptimalRouteAndCost(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else {
-            final data = snapshot.data as RouteData;
-            final userCostPerKm = fuelConsumptionPerKm * fuelPricePerLiter;
-            final optimizedCostPerKm = fuelConsumptionPerKm * fuelPricePerLiter;
+      body: Stack(children: [
+        Positioned.fill(
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5), // Blur effect
+            child: Image.asset(
+              'assets/images/background_3.jpeg', // Path to your background image
+              fit: BoxFit.cover, // Cover the entire background
+            ),
+          ),
+        ),
+        FutureBuilder(
+          future: calculateOptimalRouteAndCost(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else {
+              final data = snapshot.data as RouteData;
+              final userCostPerKm = fuelConsumptionPerKm * fuelPricePerLiter;
+              final optimizedCostPerKm =
+                  fuelConsumptionPerKm * fuelPricePerLiter;
 
-            // Ensure the total cost and savings calculation
-            double userTotalCost = data.userRouteTotalDistance * userCostPerKm;
-            double optimizedTotalCost =
-                data.optimizedRouteTotalDistance * optimizedCostPerKm;
-            final savings = userTotalCost - optimizedTotalCost;
+              // Ensure the total cost and savings calculation
+              double userTotalCost =
+                  data.userRouteTotalDistance * userCostPerKm;
+              double optimizedTotalCost =
+                  data.optimizedRouteTotalDistance * optimizedCostPerKm;
+              final savings = userTotalCost - optimizedTotalCost;
 
-            return SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    // User-entered route
-                    buildRouteDetailsCard(
-                      'Your Route:',
-                      data.userRouteNames,
-                      data.userRouteDistances,
-                      data.userRouteTotalDistance,
-                      userCostPerKm,
-                    ),
+              return SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      // User-entered route
+                      buildRouteDetailsCard(
+                        'Your Route:',
+                        data.userRouteNames,
+                        data.userRouteDistances,
+                        data.userRouteTotalDistance,
+                        userCostPerKm,
+                      ),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    // Optimized route
-                    buildRouteDetailsCard(
-                      'Optimized Route:',
-                      data.optimizedRouteNames,
-                      data.optimizedRouteDistances,
-                      data.optimizedRouteTotalDistance,
-                      optimizedCostPerKm,
-                    ),
+                      // Optimized route
+                      buildRouteDetailsCard(
+                        'Optimized Route:',
+                        data.optimizedRouteNames,
+                        data.optimizedRouteDistances,
+                        data.optimizedRouteTotalDistance,
+                        optimizedCostPerKm,
+                      ),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    // Display the savings
-                    if (savings > 0)
-                      Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                        color: Colors.green.shade100,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Savings:',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                      // Display the savings
+                      if (savings > 0)
+                        Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          color: Colors.green.shade100,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Savings:',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                'By taking the optimized route, you will save ${savings.toStringAsFixed(2)} EGP',
-                                style: const TextStyle(
-                                    fontSize: 18, color: Colors.green),
-                              ),
-                            ],
+                                const SizedBox(height: 10),
+                                Text(
+                                  'By taking the optimized route, you will save ${savings.toStringAsFixed(2)} EGP',
+                                  style: const TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
-          }
-        },
-      ),
+              );
+            }
+          },
+        ),
+      ]),
     );
   }
 
