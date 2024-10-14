@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:car_gas_calculator/result_page.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -74,146 +76,163 @@ class AreaName extends StatelessWidget {
     final fuelType = data['fuel'] ?? 'Unknown Fuel Type';
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: locationController,
-                decoration: const InputDecoration(
-                  labelText: 'Enter the areas',
-                  labelStyle: TextStyle(color: Colors.blue),
-                  hintText: 'example: Maadi',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: ImageFiltered(
+              imageFilter:
+                  ImageFilter.blur(sigmaX: 5, sigmaY: 5), // Blur effect
+              child: Image.asset(
+                'assets/images/background.jpeg', // Path to your background image
+                fit: BoxFit.cover, // Cover the entire background
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: locationController,
+                    decoration: const InputDecoration(
+                      labelText: 'Enter the areas',
+                      labelStyle: TextStyle(color: Colors.black),
+                      hintText: 'example: Maadi',
+                      hintStyle: TextStyle(color: Colors.blueGrey),
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.cyan, width: 3),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-            // Button to get the current location
-            ElevatedButton.icon(
-              onPressed: _getCurrentLocation,
-              icon: const Icon(Icons.my_location),
-              label: const Text('Get Current Location'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                elevation: 5,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            ElevatedButton(
-              onPressed: () {
-                if (locationController.text.isEmpty) {
-                  Fluttertoast.showToast(
-                    msg: 'Add location',
-                    toastLength: Toast.LENGTH_LONG,
-                    gravity: ToastGravity.BOTTOM,
-                    backgroundColor: Colors.red,
-                    textColor: Colors.white,
-                    fontSize: 14.0,
-                  );
-                } else {
-                  locationList.add(locationController.text);
-                  locationController.clear();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                elevation: 5,
-              ),
-              child: const Text('Add'),
-            ),
-            Expanded(
-              child: Obx(() {
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
-                  child: ReorderableListView(
-                    onReorder: (int oldIndex, int newIndex) {
-                      if (newIndex > oldIndex) {
-                        newIndex -= 1;
-                      }
-                      final item = locationList.removeAt(oldIndex);
-                      locationList.insert(newIndex, item);
-                    },
-                    children: [
-                      for (int index = 0; index < locationList.length; index++)
-                        Card(
-                          key: ValueKey(index), // Unique key for each item
-                          elevation: 5,
-                          shape: RoundedRectangleBorder(
-                            side:
-                                const BorderSide(color: Colors.blue, width: 1),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          margin: const EdgeInsets.symmetric(
-                              vertical: 5, horizontal: 10),
-                          child: ListTile(
-                            title: Text(locationList[index]),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  onPressed: () {
-                                    locationList.removeAt(index);
-                                  },
-                                  icon: const Icon(Icons.remove),
-                                  color: Colors.red,
-                                ),
-                                const Icon(
-                                    Icons.drag_handle_sharp), // Reordering icon
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
+                // Button to get the current location
+                ElevatedButton.icon(
+                  onPressed: _getCurrentLocation,
+                  icon: const Icon(Icons.my_location),
+                  label: const Text('Get Current Location'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    elevation: 5,
                   ),
-                );
-              }),
+                ),
+
+                const SizedBox(height: 10),
+
+                ElevatedButton(
+                  onPressed: () {
+                    if (locationController.text.isEmpty) {
+                      Fluttertoast.showToast(
+                        msg: 'Add location',
+                        toastLength: Toast.LENGTH_LONG,
+                        gravity: ToastGravity.BOTTOM,
+                        backgroundColor: Colors.red,
+                        textColor: Colors.white,
+                        fontSize: 14.0,
+                      );
+                    } else {
+                      locationList.add(locationController.text);
+                      locationController.clear();
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    elevation: 5,
+                  ),
+                  child: const Text('Add'),
+                ),
+                Expanded(
+                  child: Obx(() {
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+                      child: ReorderableListView(
+                        onReorder: (int oldIndex, int newIndex) {
+                          if (newIndex > oldIndex) {
+                            newIndex -= 1;
+                          }
+                          final item = locationList.removeAt(oldIndex);
+                          locationList.insert(newIndex, item);
+                        },
+                        children: [
+                          for (int index = 0;
+                              index < locationList.length;
+                              index++)
+                            Card(
+                              key: ValueKey(index),
+                              // Unique key for each item
+                              elevation: 5,
+                              shape: RoundedRectangleBorder(
+                                side: const BorderSide(
+                                    color: Colors.blue, width: 1),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              margin: const EdgeInsets.symmetric(
+                                  vertical: 5, horizontal: 10),
+                              child: ListTile(
+                                title: Text(locationList[index]),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      onPressed: () {
+                                        locationList.removeAt(index);
+                                      },
+                                      icon: const Icon(Icons.remove),
+                                      color: Colors.red,
+                                    ),
+                                    const Icon(Icons
+                                        .drag_handle_sharp), // Reordering icon
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    if (locationList.isEmpty) {
+                      Fluttertoast.showToast(
+                        msg: 'Please add at least one location',
+                        toastLength: Toast.LENGTH_LONG,
+                        gravity: ToastGravity.BOTTOM,
+                        backgroundColor: Colors.red,
+                        textColor: Colors.white,
+                        fontSize: 14.0,
+                      );
+                    } else {
+                      Get.to(
+                        ResultPage(
+                          locations: locationList,
+                          carType: carType,
+                          fuelType: fuelType,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    elevation: 5,
+                  ),
+                  child: const Text('Next'),
+                ),
+                const SizedBox(height: 10),
+              ],
             ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                if (locationList.isEmpty) {
-                  Fluttertoast.showToast(
-                    msg: 'Please add at least one location',
-                    toastLength: Toast.LENGTH_LONG,
-                    gravity: ToastGravity.BOTTOM,
-                    backgroundColor: Colors.red,
-                    textColor: Colors.white,
-                    fontSize: 14.0,
-                  );
-                } else {
-                  Get.to(
-                    ResultPage(
-                      locations: locationList,
-                      carType: carType,
-                      fuelType: fuelType,
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                elevation: 5,
-              ),
-              child: const Text('Next'),
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
